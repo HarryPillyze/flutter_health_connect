@@ -19,7 +19,7 @@ class HealthConnectFactory {
     List<HealthConnectDataType> types, {
     bool readOnly = false,
   }) async {
-    return await _channel.invokeMethod('hasPermissions', {
+    return await _channel.invokeMethod('hasHCPermissions', {
       'types': types.map((e) => e.name).toList(),
       'readOnly': readOnly,
     });
@@ -29,7 +29,7 @@ class HealthConnectFactory {
     List<HealthConnectDataType> types, {
     bool readOnly = false,
   }) async {
-    return await _channel.invokeMethod('requestPermissions', {
+    return await _channel.invokeMethod('requestHCPermissions', {
       'types': types.map((e) => e.name).toList(),
       'readOnly': readOnly,
     });

@@ -102,7 +102,7 @@ class FlutterHealthConnectPlugin : FlutterPlugin, MethodCallHandler, ActivityAwa
                 }
             }
 
-            "hasPermissions" -> {
+            "hasHCPermissions" -> {
                 scope.launch {
                     val isReadOnly = call.argument<Boolean>("readOnly") ?: false
                     val granted = client.permissionController.getGrantedPermissions()
@@ -112,7 +112,7 @@ class FlutterHealthConnectPlugin : FlutterPlugin, MethodCallHandler, ActivityAwa
                 }
             }
 
-            "requestPermissions" -> {
+            "requestHCPermissions" -> {
                 try {
                     permissionResult = result
                     val isReadOnly = call.argument<Boolean>("readOnly") ?: false
