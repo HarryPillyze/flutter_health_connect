@@ -112,6 +112,14 @@ class FlutterHealthConnectPlugin : FlutterPlugin, MethodCallHandler, ActivityAwa
                 }
             }
 
+            "grantedHCPermissions" -> {
+                scope.launch {
+                    val isReadOnly = call.argument<Boolean>("readOnly") ?: false
+                    val granted = client.permissionController.getGrantedPermissions()
+                    result.success(granted)
+                }
+            }
+
             "requestHCPermissions" -> {
                 try {
                     permissionResult = result

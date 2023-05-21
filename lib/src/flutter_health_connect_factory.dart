@@ -25,6 +25,14 @@ class HealthConnectFactory {
     });
   }
 
+  static Future<dynamic> grantedPermissions({
+    bool readOnly = false,
+  }) async {
+    return await _channel.invokeMethod('grantedHCPermissions', {
+      'readOnly': readOnly,
+    });
+  }
+
   static Future<bool> requestPermissions(
     List<HealthConnectDataType> types, {
     bool readOnly = false,
@@ -41,8 +49,7 @@ class HealthConnectFactory {
     }).then((value) => Map<String, Object>.from(value));
   }
 
-  static Future<String> getChangesToken(
-      List<HealthConnectDataType> types) async {
+  static Future<String> getChangesToken(List<HealthConnectDataType> types) async {
     return await _channel.invokeMethod('getChangesToken', {
       'types': types.map((e) => e.name).toList(),
     });
@@ -66,9 +73,7 @@ class HealthConnectFactory {
       'pageToken': pageToken,
       'ascendingOrder': ascendingOrder,
     };
-    return await _channel
-        .invokeMethod('getRecord', args)
-        .then((value) => Map<String, Object>.from(value));
+    return await _channel.invokeMethod('getRecord', args).then((value) => Map<String, Object>.from(value));
   }
 
   static Future<bool> openHealthConnectSettings() async {
