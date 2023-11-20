@@ -78,39 +78,39 @@ class FlutterHealthConnectPlugin : FlutterPlugin, MethodCallHandler, ActivityAwa
         val requestedTypes = (args["types"] as? ArrayList<*>)?.filterIsInstance<String>()
         when (call.method) {
 
-            "isApiSupported" -> {
-                result.success(HealthConnectClient.sdkStatus(activityContext) != HealthConnectClient.SDK_UNAVAILABLE)
-            }
+//            "isApiSupported" -> {
+//                result.success(HealthConnectClient.sdkStatus(activityContext) != HealthConnectClient.SDK_UNAVAILABLE)
+//            }
 
-            "isAvailable" -> {
-                result.success(HealthConnectClient.sdkStatus(activityContext) == HealthConnectClient.SDK_AVAILABLE)
-            }
+//            "isAvailable" -> {
+//                result.success(HealthConnectClient.sdkStatus(activityContext) == HealthConnectClient.SDK_AVAILABLE)
+//            }
 
-            "installHealthConnect" -> {
-                try {
-                    activityContext.startActivity(
-                        Intent(Intent.ACTION_VIEW).apply {
-                            setPackage("com.android.vending")
-                            data =
-                                Uri.parse("market://details?id=com.google.android.apps.healthdata&url=healthconnect%3A%2F%2Fonboarding")
-                            putExtra("overlay", true)
-                            putExtra("callerId", activityContext.packageName)
-                        })
-                    result.success(true)
-                } catch (e: Throwable) {
-                    result.error("UNABLE_TO_START_ACTIVITY", e.message, e)
-                }
-            }
+//            "installHealthConnect" -> {
+//                try {
+//                    activityContext.startActivity(
+//                        Intent(Intent.ACTION_VIEW).apply {
+//                            setPackage("com.android.vending")
+//                            data =
+//                                Uri.parse("market://details?id=com.google.android.apps.healthdata&url=healthconnect%3A%2F%2Fonboarding")
+//                            putExtra("overlay", true)
+//                            putExtra("callerId", activityContext.packageName)
+//                        })
+//                    result.success(true)
+//                } catch (e: Throwable) {
+//                    result.error("UNABLE_TO_START_ACTIVITY", e.message, e)
+//                }
+//            }
 
-            "hasHCPermissions" -> {
-                scope.launch {
-                    val isReadOnly = call.argument<Boolean>("readOnly") ?: false
-                    val granted = client.permissionController.getGrantedPermissions()
-                    val status =
-                        granted.containsAll(mapTypesToPermissions(requestedTypes, isReadOnly))
-                    result.success(status)
-                }
-            }
+//            "hasHCPermissions" -> {
+//                scope.launch {
+//                    val isReadOnly = call.argument<Boolean>("readOnly") ?: false
+//                    val granted = client.permissionController.getGrantedPermissions()
+//                    val status =
+//                        granted.containsAll(mapTypesToPermissions(requestedTypes, isReadOnly))
+//                    result.success(status)
+//                }
+//            }
 
             "grantedHCPermissions" -> {
                 scope.launch {
@@ -120,123 +120,123 @@ class FlutterHealthConnectPlugin : FlutterPlugin, MethodCallHandler, ActivityAwa
                 }
             }
 
-            "requestHCPermissions" -> {
-                try {
-                    permissionResult = result
-                    val isReadOnly = call.argument<Boolean>("readOnly") ?: false
-                    val allPermissions = mapTypesToPermissions(
-                        requestedTypes,
-                        isReadOnly
-                    )
-                    val contract = PermissionController.createRequestPermissionResultContract()
-                    val intent = contract.createIntent(activityContext, allPermissions)
-                    activityContext.startActivityForResult(intent, HEALTH_CONNECT_RESULT_CODE)
-                } catch (e: Throwable) {
-                    result.error("UNABLE_TO_START_ACTIVITY", e.message, e)
-                }
-            }
-            "getChanges" -> {
-                val token = call.argument<String>("token") ?: ""
-                scope.launch {
-                    try {
-                        val changes = client.getChanges(token)
-                        val reply = replyMapper.convertValue(
-                            changes,
-                            hashMapOf<String, Any>()::class.java
-                        )
-                        val typedChanges = changes.changes.mapIndexed { _, change ->
-                            when (change) {
-                                is UpsertionChange -> hashMapOf(
-                                    change::class.simpleName to
-                                            hashMapOf(
-                                                change.record::class.simpleName to
-                                                        replyMapper.convertValue(
-                                                            change.record,
-                                                            hashMapOf<String, Any>()::class.java
-                                                        )
-                                            )
-                                )
-                                else -> hashMapOf(
-                                    change::class.simpleName to
-                                            replyMapper.convertValue(
-                                                change,
-                                                hashMapOf<String, Any>()::class.java
-                                            )
-                                )
-                            }
-                        }
-                        reply["changes"] = typedChanges
-                        result.success(reply)
-                    } catch (e: Throwable) {
-                        result.error("GET_CHANGES_FAIL", e.localizedMessage, e)
-                    }
-                }
-
-            }
-            "getChangesToken" -> {
-                val recordTypes = requestedTypes?.mapNotNull {
-                    HealthConnectRecordTypeMap[it]
-                }?.toSet() ?: emptySet()
-                scope.launch {
-                    try {
-                        result.success(
-                            client.getChangesToken(
-                                ChangesTokenRequest(
-                                    recordTypes,
-                                    setOf()
-                                )
-                            )
-                        )
-                    } catch (e: Throwable) {
-                        result.error("GET_CHANGES_TOKEN_FAIL", e.localizedMessage, e)
-                    }
-                }
-            }
-            "getRecord" -> {
-                scope.launch {
-                    val type = call.argument<String>("type") ?: ""
-                    val startTime = call.argument<String>("startTime")
-                    val endTime = call.argument<String>("endTime")
-                    val pageSize = call.argument<Int>("pageSize") ?: MAX_LENGTH
-                    val pageToken = call.argument<String?>("pageToken")
-                    val ascendingOrder = call.argument<Boolean?>("ascendingOrder") ?: true
-                    try {
-                        val start =
-                            startTime?.let { LocalDateTime.parse(it) } ?: LocalDateTime.now()
-                                .minus(1, ChronoUnit.DAYS)
-                        val end = endTime?.let { LocalDateTime.parse(it) } ?: LocalDateTime.now()
-                        HealthConnectRecordTypeMap[type]?.let { classType ->
-                            val reply = client.readRecords(
-                                ReadRecordsRequest(
-                                    recordType = classType,
-                                    timeRangeFilter = TimeRangeFilter.between(start, end),
-                                    pageSize = pageSize,
-                                    pageToken = pageToken,
-                                    ascendingOrder = ascendingOrder,
-                                )
-                            )
-                            result.success(
-                                replyMapper.convertValue(
-                                    reply,
-                                    hashMapOf<String, Any>()::class.java
-                                )
-                            )
-                        } ?: throw Throwable("Unsupported type $type")
-                    } catch (e: Throwable) {
-                        result.error("GET_RECORD_FAIL", e.localizedMessage, e)
-                    }
-                }
-            }
-            "openHealthConnectSettings" -> {
-                try {
-                    val intent = Intent()
-                    intent.action = HealthConnectClient.ACTION_HEALTH_CONNECT_SETTINGS
-                    activityContext.startActivity(intent)
-                    result.success(true)
-                } catch (e: Throwable) {
-                    result.error("UNABLE_TO_START_ACTIVITY", e.message, e)
-                }
-            }
+//            "requestHCPermissions" -> {
+//                try {
+//                    permissionResult = result
+//                    val isReadOnly = call.argument<Boolean>("readOnly") ?: false
+//                    val allPermissions = mapTypesToPermissions(
+//                        requestedTypes,
+//                        isReadOnly
+//                    )
+//                    val contract = PermissionController.createRequestPermissionResultContract()
+//                    val intent = contract.createIntent(activityContext, allPermissions)
+//                    activityContext.startActivityForResult(intent, HEALTH_CONNECT_RESULT_CODE)
+//                } catch (e: Throwable) {
+//                    result.error("UNABLE_TO_START_ACTIVITY", e.message, e)
+//                }
+//            }
+//            "getChanges" -> {
+//                val token = call.argument<String>("token") ?: ""
+//                scope.launch {
+//                    try {
+//                        val changes = client.getChanges(token)
+//                        val reply = replyMapper.convertValue(
+//                            changes,
+//                            hashMapOf<String, Any>()::class.java
+//                        )
+//                        val typedChanges = changes.changes.mapIndexed { _, change ->
+//                            when (change) {
+//                                is UpsertionChange -> hashMapOf(
+//                                    change::class.simpleName to
+//                                            hashMapOf(
+//                                                change.record::class.simpleName to
+//                                                        replyMapper.convertValue(
+//                                                            change.record,
+//                                                            hashMapOf<String, Any>()::class.java
+//                                                        )
+//                                            )
+//                                )
+//                                else -> hashMapOf(
+//                                    change::class.simpleName to
+//                                            replyMapper.convertValue(
+//                                                change,
+//                                                hashMapOf<String, Any>()::class.java
+//                                            )
+//                                )
+//                            }
+//                        }
+//                        reply["changes"] = typedChanges
+//                        result.success(reply)
+//                    } catch (e: Throwable) {
+//                        result.error("GET_CHANGES_FAIL", e.localizedMessage, e)
+//                    }
+//                }
+//
+//            }
+//            "getChangesToken" -> {
+//                val recordTypes = requestedTypes?.mapNotNull {
+//                    HealthConnectRecordTypeMap[it]
+//                }?.toSet() ?: emptySet()
+//                scope.launch {
+//                    try {
+//                        result.success(
+//                            client.getChangesToken(
+//                                ChangesTokenRequest(
+//                                    recordTypes,
+//                                    setOf()
+//                                )
+//                            )
+//                        )
+//                    } catch (e: Throwable) {
+//                        result.error("GET_CHANGES_TOKEN_FAIL", e.localizedMessage, e)
+//                    }
+//                }
+//            }
+//            "getRecord" -> {
+//                scope.launch {
+//                    val type = call.argument<String>("type") ?: ""
+//                    val startTime = call.argument<String>("startTime")
+//                    val endTime = call.argument<String>("endTime")
+//                    val pageSize = call.argument<Int>("pageSize") ?: MAX_LENGTH
+//                    val pageToken = call.argument<String?>("pageToken")
+//                    val ascendingOrder = call.argument<Boolean?>("ascendingOrder") ?: true
+//                    try {
+//                        val start =
+//                            startTime?.let { LocalDateTime.parse(it) } ?: LocalDateTime.now()
+//                                .minus(1, ChronoUnit.DAYS)
+//                        val end = endTime?.let { LocalDateTime.parse(it) } ?: LocalDateTime.now()
+//                        HealthConnectRecordTypeMap[type]?.let { classType ->
+//                            val reply = client.readRecords(
+//                                ReadRecordsRequest(
+//                                    recordType = classType,
+//                                    timeRangeFilter = TimeRangeFilter.between(start, end),
+//                                    pageSize = pageSize,
+//                                    pageToken = pageToken,
+//                                    ascendingOrder = ascendingOrder,
+//                                )
+//                            )
+//                            result.success(
+//                                replyMapper.convertValue(
+//                                    reply,
+//                                    hashMapOf<String, Any>()::class.java
+//                                )
+//                            )
+//                        } ?: throw Throwable("Unsupported type $type")
+//                    } catch (e: Throwable) {
+//                        result.error("GET_RECORD_FAIL", e.localizedMessage, e)
+//                    }
+//                }
+//            }
+//            "openHealthConnectSettings" -> {
+//                try {
+//                    val intent = Intent()
+//                    intent.action = HealthConnectClient.ACTION_HEALTH_CONNECT_SETTINGS
+//                    activityContext.startActivity(intent)
+//                    result.success(true)
+//                } catch (e: Throwable) {
+//                    result.error("UNABLE_TO_START_ACTIVITY", e.message, e)
+//                }
+//            }
             else -> {
                 result.notImplemented()
             }
