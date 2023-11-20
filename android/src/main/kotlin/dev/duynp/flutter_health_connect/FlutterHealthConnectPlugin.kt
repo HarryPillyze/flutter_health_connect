@@ -1,5 +1,6 @@
 package dev.duynp.flutter_health_connect
 
+import android.os.Build
 import android.app.Activity
 import android.content.Intent
 import android.net.Uri
@@ -128,9 +129,18 @@ class FlutterHealthConnectPlugin : FlutterPlugin, MethodCallHandler, ActivityAwa
                         requestedTypes,
                         isReadOnly
                     )
-                    val contract = PermissionController.createRequestPermissionResultContract()
-                    val intent = contract.createIntent(activityContext, allPermissions)
-                    activityContext.startActivityForResult(intent, HEALTH_CONNECT_RESULT_CODE)
+//                    val contract = PermissionController.createRequestPermissionResultContract()
+//                    val intent = contract.createIntent(activityContext, allPermissions)
+//                    activityContext.startActivityForResult(intent, HEALTH_CONNECT_RESULT_CODE)
+
+                    if (Build.VERSION.SDK_INT >= 34) {
+                        val intent = Intent("android.health.connect.action.MANAGE_HEALTH_PERMISSIONS")
+                                .putExtra(Intent.EXTRA_PACKAGE_NAME, "com.pillyze.health")
+                        activityContext.startActivity(intent)
+                    } else {
+                        val intent = Intent("androidx.health.ACTION_HEALTH_CONNECT_SETTINGS")
+                        activityContext.startActivity(intent)
+                    }
                 } catch (e: Throwable) {
                     result.error("UNABLE_TO_START_ACTIVITY", e.message, e)
                 }
